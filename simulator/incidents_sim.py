@@ -15,8 +15,14 @@ from typing import Optional
 import numpy as np
 
 BASE_RATE: dict[str, float] = {
-    "Midtown": 1.8, "Riverside": 1.2, "Downtown": 1.5, "Harlem": 0.8,
-    "Brooklyn": 1.0, "Queens": 0.9, "Bronx": 0.7, "Old Town": 0.5,
+    "Walled City":    1.8,
+    "C-Scheme":       1.5,
+    "Mansarovar":     1.2,
+    "Vaishali Nagar": 1.0,
+    "Tonk Road":      0.9,
+    "Malviya Nagar":  0.8,
+    "Sodala":         0.7,
+    "Jagatpura":      0.5,
 }
 
 DIURNAL = [
@@ -37,14 +43,45 @@ COMPLAINT_TYPES = [
 
 SCENARIO_MULTIPLIERS: dict[str, dict[str, float]] = {
     "storm": {
-        "Riverside": 6.0, "Downtown": 4.0, "Harlem": 3.0,
-        "Midtown": 2.5, "Brooklyn": 2.0, "Queens": 1.5,
-        "Bronx": 1.5, "Old Town": 2.0,
+        "Walled City":    6.0,
+        "Mansarovar":     4.0,
+        "Vaishali Nagar": 3.0,
+        "C-Scheme":       2.5,
+        "Tonk Road":      2.0,
+        "Malviya Nagar":  1.5,
+        "Sodala":         1.5,
+        "Jagatpura":      2.0,
+    },
+    # Andhi — complaints cluster in the old city / ring road, gusts drive the spike
+    "dust_storm": {
+        "Walled City":    4.5,
+        "Tonk Road":      3.5,
+        "C-Scheme":       3.0,
+        "Sodala":         3.0,
+        "Vaishali Nagar": 2.5,
+        "Mansarovar":     2.0,
+        "Malviya Nagar":  2.0,
+        "Jagatpura":      1.8,
+    },
+    # Cloudburst — Walled City flash flooding dominates
+    "monsoon": {
+        "Walled City":    9.0,
+        "Tonk Road":      5.0,
+        "C-Scheme":       4.5,
+        "Sodala":         4.0,
+        "Mansarovar":     3.0,
+        "Jagatpura":      2.8,
+        "Malviya Nagar":  2.5,
+        "Vaishali Nagar": 2.5,
     },
     "smog":  {d: 1.1 for d in BASE_RATE},
     "quiet": {d: 0.3 for d in BASE_RATE},
     "live":  {d: 1.0 for d in BASE_RATE},
 }
+
+# Fallback coordinate used only if a district is missing from city.json.
+# Jaipur Walled City (Hawa Mahal) — kept city-consistent, never NYC.
+_FALLBACK_LATLON: tuple[float, float] = (26.9239, 75.8267)
 
 _DISTRICTS: dict[str, tuple[float, float]] = {}
 
@@ -85,7 +122,7 @@ class IncidentSimulator:
             n = int(self._rng.poisson(rate))
             if not n:
                 continue
-            lat0, lon0 = _DISTRICTS.get(d, (40.71, -74.0))
+            lat0, lon0 = _DISTRICTS.get(d, _FALLBACK_LATLON)
             for _ in range(n):
                 cat, sub = COMPLAINT_TYPES[int(self._rng.integers(len(COMPLAINT_TYPES)))]
                 lat, lon = self._jitter(lat0, lon0)

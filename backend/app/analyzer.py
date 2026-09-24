@@ -234,7 +234,7 @@ async def run_tick(
                     facts["incidents_30m"] = len(i_rows)
                     facts["baseline_30m"] = 2.0  # TODO: compute from history
                 if stresses.get("transit") is not None:
-                    if "mean_delay" in dir():
+                    if "mean_delay" in locals():
                         facts["mean_delay_min"] = round(mean_delay, 1)
 
                 # Caveats
@@ -350,6 +350,20 @@ async def run_tick(
     # ---- Alerts ----
     from .alerts import dispatch as alert_dispatch
     for ins in all_insights:
+        # Emit to the UI in real time even when no webhook is configured.
+        if sse_emit and (
+            ins.level == "Alert"
+            or (ins.link is not None and ins.link.signal == "Strong signal")
+        ):
+            await sse_emit("alert", {
+                "id": ins.id,
+                "ts": ins.ts.isoformat(),
+                "district": ins.district,
+                "level": ins.level,
+                "headline": ins.headline,
+                "signal": ins.link.signal if ins.link else None,
+                "simulated": any(h.is_simulated for h in feed_health.values()),
+            })
         try:
             await alert_dispatch(ins)
         except Exception as exc:

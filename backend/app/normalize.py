@@ -26,7 +26,8 @@ def _utc(ts: Any) -> datetime:
         # Handles ISO-8601 with or without timezone offset
         dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
         if dt.tzinfo is None:
-            raise ValueError(f"Naive timestamp string rejected: {ts}")
+            # Open-Meteo returns naive UTC strings when timezone=UTC is requested
+            dt = dt.replace(tzinfo=timezone.utc)
         return dt.astimezone(timezone.utc)
     raise TypeError(f"Cannot parse timestamp: {ts!r}")
 
@@ -49,6 +50,24 @@ def normalize_weather(raw: dict, lat: float, lon: float) -> list[Event]:
             severity=min(float(rain) / 10.0, 1.0),
             label=f"Rain {rain:.1f} mm/h", is_simulated=False,
         ))
+    if (temp := current.get("temperature_2m")) is not None:
+        events.append(Event(
+            id=f"weather:temp:{h3_cell}:{ts.isoformat()}",
+            source="weather", ts_utc=ts, ingested_at=ingested,
+            lat=lat, lon=lon, h3=h3_cell, district=district,
+            kind="temperature", value=float(temp), unit="°C",
+            severity=min(max((float(temp) - 35) / 15, 0), 1.0),
+            label=f"{temp:.1f}°C", is_simulated=False,
+        ))
+    if (wind := current.get("wind_speed_10m")) is not None:
+        events.append(Event(
+            id=f"weather:wind:{h3_cell}:{ts.isoformat()}",
+            source="weather", ts_utc=ts, ingested_at=ingested,
+            lat=lat, lon=lon, h3=h3_cell, district=district,
+            kind="wind_speed", value=float(wind), unit="km/h",
+            severity=min(max((float(wind) - 20) / 60, 0), 1.0),
+            label=f"Wind {wind:.0f} km/h", is_simulated=False,
+        ))
     if (gust := current.get("wind_gusts_10m")) is not None:
         events.append(Event(
             id=f"weather:gust:{h3_cell}:{ts.isoformat()}",
@@ -57,6 +76,15 @@ def normalize_weather(raw: dict, lat: float, lon: float) -> list[Event]:
             kind="gust", value=float(gust), unit="km/h",
             severity=min(max((float(gust) - 40) / 40, 0), 1.0),
             label=f"Gust {gust:.0f} km/h", is_simulated=False,
+        ))
+    if (humidity := current.get("relative_humidity_2m")) is not None:
+        events.append(Event(
+            id=f"weather:humidity:{h3_cell}:{ts.isoformat()}",
+            source="weather", ts_utc=ts, ingested_at=ingested,
+            lat=lat, lon=lon, h3=h3_cell, district=district,
+            kind="humidity", value=float(humidity), unit="%",
+            severity=0.0,
+            label=f"Humidity {humidity:.0f}%", is_simulated=False,
         ))
     return events
 
@@ -78,6 +106,23 @@ def normalize_air(raw: dict, lat: float, lon: float) -> list[Event]:
             severity=min(max((float(aqi) - 50) / 150, 0), 1.0),
             label=f"AQI {aqi:.0f}", is_simulated=False,
         ))
+
+    # Preserve particulate channels. A Jaipur dust storm can produce a large
+    # PM10 surge even when a composite AQI is unavailable or changes slowly.
+    for field, kind, unit, alert_above in (
+        ("pm2_5", "pm2_5", "µg/m³", 75.0),
+        ("pm10", "pm10", "µg/m³", 150.0),
+    ):
+        if (value := current.get(field)) is not None:
+            value = float(value)
+            events.append(Event(
+                id=f"air:{kind}:{h3_cell}:{ts.isoformat()}",
+                source="air", ts_utc=ts, ingested_at=ingested,
+                lat=lat, lon=lon, h3=h3_cell, district=district,
+                kind=kind, value=value, unit=unit,
+                severity=min(max((value - alert_above) / 300.0, 0), 1.0),
+                label=f"{kind.upper()} {value:.0f} µg/m³", is_simulated=False,
+            ))
     return events
 
 
@@ -91,7 +136,7 @@ def normalize_incident(raw: dict) -> Event | None:
         uid = raw.get("report_id", hashlib.md5(json.dumps(raw, sort_keys=True).encode()).hexdigest()[:12])
         return Event(
             id=f"incident:{uid}",
-            source="incident", ts_utc=ts, ingested_at=ingested,
+            source="incidents", ts_utc=ts, ingested_at=ingested,
             lat=lat, lon=lon, h3=h3_cell, district=district,
             kind=raw.get("category", "complaint").lower().replace(" ", "_"),
             value=1.0, unit="count",

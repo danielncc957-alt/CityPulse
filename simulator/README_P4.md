@@ -10,8 +10,9 @@
 simulator/
 ├─ incidents_sim.py    ← Poisson incident generator (messy format: ISO-8601 with tz offset)
 ├─ transit_sim.py      ← Route delay generator (messy format: epoch seconds)
-├─ scenarios.py        ← Storm / Smog / Quiet scripts with multipliers per district
-└─ baseline.py         ← 7-day seeded synthetic history warm-up
+├─ scenarios.py        ← Storm / Smog / Quiet + Jaipur Dust Storm / Monsoon scripts
+├─ baseline.py         ← 7-day seeded synthetic history warm-up
+└─ replay_data.py      ← builds cached Jaipur cloudburst REPLAY fixture
 
 design/
 ├─ tokens.json         ← colour, type, spacing tokens
@@ -42,12 +43,14 @@ design/
 - Routes: A C E 1 2 3 4 5 6 7 B D F G J L M N Q R W (mapped to districts via `city.json`)
 - Cadence: new batch every 60–90 s
 
-### Scenario multipliers (examples)
-| Scenario | Riverside rain boost | Transit delay boost | Air quality boost |
+### Scenario multipliers (Jaipur)
+| Scenario | Jaipur signature | Transit boost | Air quality |
 |---|---|---|---|
-| Storm | 6× incidents, rain_mm_h=12 | 3× delays | 1× (no change) |
-| Smog | 1× incidents | 1× | AQI spike to 180 |
-| Quiet | 0.3× incidents | 0.5× delays | AQI 35 |
+| Storm | 18 mm/h rain, 70 km/h gusts | 3× | real |
+| Dust storm (Andhi) | 95 km/h gusts, PM10 ≥ 520 µg/m³ | 4× | AQI 260 |
+| Monsoon cloudburst | 42 mm/h rain, 80 km/h gusts | 6× | real |
+| Smog | AQI spike | 1× | AQI 210 |
+| Quiet | no alerts | 0.5× | AQI 40 |
 
 ## Design tokens
 
@@ -88,6 +91,7 @@ design/
 - [ ] No individual-level data or free text visible
 - [ ] Simulated feeds carry SIM badge
 - [ ] Scenario "Quiet" → no false alerts over 10 min
+- [ ] Dust storm / monsoon scenarios produce an Alert or Strong-signal insight within two analyzer bins
 - [ ] Replay is deterministic (same result twice)
 - [ ] Backend restart → UI recovers without page refresh
 - [ ] Works at 1280×720 and phone-width

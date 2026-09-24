@@ -31,9 +31,17 @@ Open http://localhost:5173. Add `?demo=1` to the URL for the demo control panel.
 
 ## Data Modes
 
-- **LIVE**: real weather + air quality from Open-Meteo; simulated incidents + transit
-- **REPLAY**: cached NYC 311 + weather data from 2023-09-29 (real flash-flood event)
-- **SCENARIO**: scripted Storm / Smog / Quiet events with time-warp (1×, 10×, 60×)
+CityPulse Jaipur monitors the Pink City / Walled City area and all timestamps
+are stored in UTC while displayed in Asia/Kolkata.
+
+- **LIVE**: real Jaipur weather + air quality from Open-Meteo; simulated civic incidents + transit
+- **REPLAY**: cached Jaipur monsoon-cloudburst day (`jaipur_2025_08_22`) with deterministic time-warp
+- **SCENARIO**: scripted Storm / Smog / Quiet plus Jaipur extreme-event drills:
+  **Dust storm (Andhi)** and **Monsoon cloudburst** with time-warp (1×, 10×, 60×)
+
+Extreme-event scenarios inject high gusts, particulate surge, heavy rain,
+incident spikes and transit delays. They exercise the same monitoring and
+alerting path as normal data and are labelled `SIMULATED`.
 
 ## API
 
@@ -45,9 +53,10 @@ Key endpoints:
 - `GET /api/timeseries` — binned history
 - `POST /api/demo/scenario` — trigger a scenario
 - `POST /api/demo/feed` — kill/restore a feed
+- `GET /api/demo/scenarios` — list all scenarios and Jaipur extreme-event drills
 
 ## Attribution
 
 - Weather & Air Quality: [Open-Meteo](https://open-meteo.com) (CC BY 4.0)
 - Map: MapLibre GL JS + CARTO Dark Matter
-- NYC 311 replay data: [NYC Open Data](https://data.cityofnewyork.us/resource/erm2-nwe9.json)
+- Jaipur replay fixture: cached Jaipur civic complaints + Open-Meteo historical weather for 22 Aug 2025

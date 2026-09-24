@@ -19,21 +19,22 @@ from typing import Optional
 import numpy as np
 
 # ---------------------------------------------------------------------------
-# Routes (from city.json route_zone_map keys)
+# Routes matching city.json route_zone_map keys (Jaipur bus routes)
 # ---------------------------------------------------------------------------
 
-ALL_ROUTES = ["A", "C", "E", "1", "2", "3", "4", "5", "6", "7",
-              "B", "D", "F", "G", "J", "L", "M", "N", "Q", "R", "W"]
+ALL_ROUTES = ["5A", "5", "6", "7", "9", "11", "14", "16", "17", "18", "19", "22", "24", "26"]
 
 # Base delay seconds per route (slightly different baseline per route)
 BASE_DELAY_S: dict[str, float] = {r: float(30 + i * 5) for i, r in enumerate(ALL_ROUTES)}
 
 # Scenario delay multipliers
 SCENARIO_MULTIPLIERS: dict[str, float] = {
-    "storm": 3.0,
-    "smog":  1.1,
-    "quiet": 0.5,
-    "live":  1.0,
+    "storm":       3.0,
+    "dust_storm":  4.0,   # Andhi: visibility collapse, near-gridlock
+    "monsoon":     6.0,   # cloudburst: arterial roads flood
+    "smog":        1.1,
+    "quiet":       0.5,
+    "live":        1.0,
 }
 
 

@@ -17,7 +17,7 @@ backend/
 │  ├─ adapters/
 │  │  ├─ weather.py    ← Open-Meteo Forecast (real)
 │  │  ├─ air.py        ← Open-Meteo Air Quality (real)
-│  │  ├─ nyc311_replay.py  ← loads cached CSV from data/replay/
+│  │  ├─ replay.py       ← loads cached Jaipur CSV/JSON from data/replay/
 │  │  ├─ incidents_sim.py  ← P4 builds this; you wire it in
 │  │  └─ transit_sim.py    ← P4 builds this; you wire it in
 │  └─ normalize.py     ← per-source raw → Event
@@ -32,7 +32,7 @@ backend/
 - **H4–8:** Virtual clock. Wire in scenario engine from P4. SSE `pulse` events.
 - **H8–12:** Feed kill toggles (`POST /api/demo/feed`). Time-warp controls. Late-arrival deduplication.
 - **H12–15:** Graceful degradation (weight renormalization when a feed is down). Backend reconnect.
-- **H15–18:** NYC replay loader. Dockerfile. README. Deploy backup.
+- **H15–18:** Jaipur replay loader. Dockerfile. README. Deploy backup.
 
 ## Contract with other roles
 
