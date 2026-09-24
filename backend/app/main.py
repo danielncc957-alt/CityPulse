@@ -316,7 +316,7 @@ async def _feed_loop():
                 FEED_HEALTH["air"].status = "delayed"
 
         # ---- Scenario weather / air injection (SCENARIO mode only) ----
-        scenario = get_active()
+        scenario = get_scenario()
         if _DATA_MODE == "SCENARIO" and scenario.name != "live":
             if scenario.weather_overrides:
                 try:
